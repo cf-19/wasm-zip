@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>zip example</title>
+</head>
+<body>
+	<span>zip files</span>
+    <input id="zipFiles" type="file" multiple onchange="ZipFiles()">
+    <br>
+
+    <span>extract a zip file: </span>
+    <input type="file" multiple onchange="ExtractAzipFile()">
+
+	<script>
+        var ZipModule = {};
+
+		function download(filename, uint8array) {
+            const blob = new Blob([uint8array], {type: "octet/stream"});
+            console.log(blob)
+			const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove()
+		}
+        
+        async function ZipFiles()
+		{
+			var i = document.getElementById("zipFiles")
+			var files = i.files
+			if(files)
+			{
+				var vector = new ZipModule.file_list()
+
+				for (let i = 0; i < files.length; i++) {
+					const file = files[i];
+					var buf = await file.arrayBuffer()
+					vector.push_back({
+						filename: file.name,
+						buf,
+					})
+				}
+
+				var zipbuf = ZipModule.zip_files(vector)
+				download("demo.zip", zipbuf)
+			}
+        }
+
+        async function ExtractAzipFile()
+        {
+			var zipText = await event.target.files[0].arrayBuffer()
+			var res = ZipModule.extract_from_zip(zipText)
+
+			for (var i = 0; i < res.size(); i++) {
+                var file = res.get(i)
+                // console.log(file)
+                download(file.filename, file.buf)
+			}
+		}
+	</script>
+
+	<script src="zip_wasm.js"></script>
+</body>
+</html>
